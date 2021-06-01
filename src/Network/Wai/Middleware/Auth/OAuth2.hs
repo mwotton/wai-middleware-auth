@@ -31,6 +31,8 @@ import qualified Network.Wai.Middleware.Auth          as MA
 import           Network.Wai.Middleware.Auth.Provider
 import           System.PosixCompat.Time              (epochTime)
 import qualified URI.ByteString                       as U
+import GHC.Stack
+import Debug.Trace
 
 -- | General OAuth2 authentication `Provider`.
 data OAuth2 = OAuth2
@@ -54,10 +56,12 @@ instance Exception URIParseException
 -- | Parse absolute URI and throw `URIParseException` in case it is malformed
 --
 -- @since 0.1.2.0
-parseAbsoluteURI :: MonadThrow m => T.Text -> m U.URI
+parseAbsoluteURI :: (HasCallStack, MonadThrow m) => T.Text -> m U.URI
 parseAbsoluteURI urlTxt = do
   case U.parseURI U.strictURIParserOptions (encodeUtf8 urlTxt) of
-    Left err  -> throwM $ URIParseException err
+    Left err  -> do
+      traceM $ prettyCallStack callStack
+      throwM $ URIParseException err
     Right url -> return url
 
 getClientId :: T.Text -> T.Text
